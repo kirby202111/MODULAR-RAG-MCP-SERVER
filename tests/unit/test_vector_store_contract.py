@@ -429,3 +429,71 @@ class TestVectorStoreFactory:
         providers = VectorStoreFactory.list_providers()
         
         assert providers == ['chroma', 'milvus', 'qdrant']  # Alphabetically sorted
+
+
+# ── Boundary / Contract tests (I4) ──────────────────────────────────
+
+class TestBaseVectorStoreContractBoundary:
+    """Boundary tests for BaseVectorStore contract."""
+
+    def test_get_by_ids_not_implemented(self):
+        """get_by_ids() should raise NotImplementedError by default."""
+        store = FakeVectorStore()
+        with pytest.raises(NotImplementedError, match="does not implement get_by_ids"):
+            store.get_by_ids(['doc1'])
+
+    def test_validate_records_vector_non_numeric_accepted(self):
+        """Vector containing non-numeric elements is accepted at base level.
+        
+        Note: The base class only checks type (list/tuple) and non-empty.
+        Type enforcement of individual elements is provider-specific.
+        """
+        store = FakeVectorStore()
+        # Base validation does not reject non-numeric elements
+        store.validate_records([{'id': 'doc1', 'vector': ['a', 'b']}])
+
+    def test_validate_records_single_element_vector(self):
+        """Single-element vector should be valid."""
+        store = FakeVectorStore()
+        store.validate_records([{'id': 'doc1', 'vector': [0.5]}])
+
+    def test_query_top_k_one(self):
+        """top_k=1 should return at most 1 result."""
+        store = FakeVectorStore()
+        store.upsert([
+            {'id': 'a', 'vector': [0.1]},
+            {'id': 'b', 'vector': [0.2]},
+        ])
+        results = store.query([0.1], top_k=1)
+        assert len(results) <= 1
+
+    def test_query_empty_store(self):
+        """Querying empty store should return empty list."""
+        store = FakeVectorStore()
+        results = store.query([0.1, 0.2], top_k=5)
+        assert results == []
+
+    def test_upsert_preserves_metadata(self):
+        """Metadata should be preserved through upsert → query cycle."""
+        store = FakeVectorStore()
+        store.upsert([{
+            'id': 'doc1',
+            'vector': [0.1],
+            'metadata': {'source': 'test.pdf', 'page': 3},
+        }])
+        results = store.query([0.1], top_k=1)
+        assert results[0]['metadata']['source'] == 'test.pdf'
+        assert results[0]['metadata']['page'] == 3
+
+    def test_query_filters_empty_dict(self):
+        """Empty filter dict should match all records."""
+        store = FakeVectorStore()
+        store.upsert([{'id': 'a', 'vector': [0.1], 'metadata': {'k': 'v'}}])
+        results = store.query([0.1], top_k=10, filters={})
+        assert len(results) == 1
+
+    def test_delete_requires_list(self):
+        """delete() takes a list of IDs (contract shape check)."""
+        store = FakeVectorStore()
+        with pytest.raises(NotImplementedError):
+            store.delete(['id1', 'id2'])

@@ -185,3 +185,57 @@ class TestRerankerFactory:
         
         error_message = str(exc_info.value)
         assert "settings.rerank.provider" in error_message
+
+
+# ── Boundary / Contract tests (I4) ──────────────────────────────────
+
+class TestRerankerContractBoundary:
+    """Boundary tests for BaseReranker contract."""
+
+    def test_none_reranker_single_candidate(self):
+        """NoneReranker should handle single-element list."""
+        reranker = NoneReranker()
+        result = reranker.rerank("q", [{"id": "a", "score": 0.9}])
+        assert len(result) == 1
+        assert result[0]["id"] == "a"
+
+    def test_none_reranker_validates_inputs(self):
+        """NoneReranker should still validate query and candidates."""
+        reranker = NoneReranker()
+        with pytest.raises(ValueError, match="cannot be empty"):
+            reranker.rerank("", [{"id": "a"}])
+        with pytest.raises(ValueError, match="cannot be empty"):
+            reranker.rerank("q", [])
+
+    def test_fake_reranker_sorts_by_score(self):
+        """FakeReranker should sort candidates by score descending."""
+        reranker = FakeReranker()
+        candidates = [
+            {"id": "low", "score": 0.1},
+            {"id": "high", "score": 0.9},
+            {"id": "mid", "score": 0.5},
+        ]
+        result = reranker.rerank("query", candidates)
+        assert [r["id"] for r in result] == ["high", "mid", "low"]
+
+    def test_reranker_returns_new_list(self):
+        """Reranker should return a new list, not mutate the input."""
+        reranker = NoneReranker()
+        candidates = [{"id": "a"}, {"id": "b"}]
+        result = reranker.rerank("q", candidates)
+        assert result is not candidates
+
+    def test_validate_candidates_with_extra_fields(self):
+        """Candidates with extra metadata fields should be accepted."""
+        reranker = FakeReranker()
+        candidates = [
+            {"id": "a", "score": 0.5, "text": "hello", "metadata": {"p": 1}},
+        ]
+        reranker.validate_candidates(candidates)
+
+    def test_register_duplicate_provider(self):
+        """Re-registering same name should overwrite silently."""
+        RerankerFactory._PROVIDERS.clear()
+        RerankerFactory.register_provider("fake", FakeReranker)
+        RerankerFactory.register_provider("fake", NoneReranker)
+        assert RerankerFactory._PROVIDERS["fake"] is NoneReranker

@@ -105,3 +105,59 @@ class TestEvaluatorFactory:
         EvaluatorFactory.register_provider("alpha", AlphaEvaluator)
 
         assert EvaluatorFactory.list_providers() == ["alpha", "beta", "custom"]
+
+
+# ── Boundary / Contract tests (I4) ──────────────────────────────────
+
+class TestCustomEvaluatorBoundary:
+    """Boundary tests for CustomEvaluator."""
+
+    def test_hit_rate_first_position(self) -> None:
+        """Hit at position 1 should give MRR = 1.0."""
+        evaluator = CustomEvaluator(metrics=["hit_rate", "mrr"])
+        retrieved = [{"id": "target"}, {"id": "other"}]
+        metrics = evaluator.evaluate("q", retrieved, ground_truth=["target"])
+        assert metrics["hit_rate"] == 1.0
+        assert metrics["mrr"] == 1.0
+
+    def test_hit_rate_last_position(self) -> None:
+        """Hit at last position should give MRR = 1/n."""
+        evaluator = CustomEvaluator(metrics=["mrr"])
+        retrieved = [{"id": "a"}, {"id": "b"}, {"id": "c"}, {"id": "target"}]
+        metrics = evaluator.evaluate("q", retrieved, ground_truth=["target"])
+        assert metrics["mrr"] == pytest.approx(0.25)
+
+    def test_single_retrieved_single_ground_truth_match(self) -> None:
+        """Minimal case: 1 retrieved, 1 ground_truth, match."""
+        evaluator = CustomEvaluator(metrics=["hit_rate", "mrr"])
+        metrics = evaluator.evaluate("q", [{"id": "x"}], ground_truth=["x"])
+        assert metrics["hit_rate"] == 1.0
+        assert metrics["mrr"] == 1.0
+
+    def test_single_retrieved_single_ground_truth_no_match(self) -> None:
+        """Minimal case: 1 retrieved, 1 ground_truth, no match."""
+        evaluator = CustomEvaluator(metrics=["hit_rate", "mrr"])
+        metrics = evaluator.evaluate("q", [{"id": "a"}], ground_truth=["b"])
+        assert metrics["hit_rate"] == 0.0
+        assert metrics["mrr"] == 0.0
+
+    def test_multiple_ground_truth_best_mrr(self) -> None:
+        """MRR should use the best (earliest) matching position."""
+        evaluator = CustomEvaluator(metrics=["mrr"])
+        retrieved = [{"id": "a"}, {"id": "gt1"}, {"id": "gt2"}]
+        metrics = evaluator.evaluate("q", retrieved, ground_truth=["gt1", "gt2"])
+        assert metrics["mrr"] == 0.5  # gt1 at position 2 → 1/2
+
+    def test_none_evaluator_returns_empty_dict(self) -> None:
+        """NoneEvaluator should return empty metrics dict."""
+        evaluator = NoneEvaluator()
+        metrics = evaluator.evaluate("q", [{"id": "x"}])
+        assert metrics == {}
+
+    def test_none_evaluator_validates_inputs(self) -> None:
+        """NoneEvaluator should still validate query and chunks."""
+        evaluator = NoneEvaluator()
+        with pytest.raises(ValueError):
+            evaluator.evaluate("", [{"id": "x"}])
+        with pytest.raises(ValueError):
+            evaluator.evaluate("q", [])
