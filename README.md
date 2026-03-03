@@ -364,7 +364,20 @@ Skill 采用 **"写作原则 + 项目亮点 + 用户画像 = 定制化简历"** 
 
 比如告诉 AI："帮我新增一个 Word 文档的 Loader，参考现有的 PDF Loader 实现"，AI 完全可以搞定。
 
-### 5. 通用建议：善用 AI
+### 5. 如何集成到 AI 工具中（Copilot / Cursor / Claude Code 等）？
+
+本项目是一个 **MCP Server**，可以集成到任何支持 MCP 协议的 AI 工具和 Agent 中。我的演示中已经集成到了 **GitHub Copilot** 和 **Cursor** 中，你同样可以集成到 **Claude Code** 或其他支持 MCP 框架的工具。
+
+**如何集成？非常简单——问 AI。**
+
+本质上就是给不同的工具写一个 MCP 的配置文件：
+- **Copilot（VS Code）**：让 AI 帮你生成 MCP 配置文件即可
+- **Cursor**：直接导入项目，Cursor 会自动识别
+- **Claude Code / 其他框架**：问 AI 怎么配置，每个工具的配置方式略有不同，但原理都一样
+
+当然，也推荐你去理解 MCP 协议的原理——了解 Server 和 Client 之间是如何通信的、Tool 是怎么注册和调用的。这些在面试中也是加分项。
+
+### 6. 通用建议：善用 AI
 
 上述大多数问题（Provider 切换、模块扩展、Bug 修复、架构理解）**AI 都能解决**：
 
