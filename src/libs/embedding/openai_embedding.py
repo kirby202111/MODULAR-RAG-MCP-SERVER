@@ -65,16 +65,17 @@ class OpenAIEmbedding(BaseEmbedding):
         # Extract optional dimensions setting
         self.dimensions = getattr(settings.embedding, 'dimensions', None)
         
-        # API key: explicit > settings > env var
+        # API key: explicit > settings > env var (.env loaded via load_dotenv)
         self.api_key = (
             api_key
             or getattr(settings.embedding, 'api_key', None)
             or os.environ.get("OPENAI_API_KEY")
+            or os.environ.get("DASHSCOPE_API_KEY")
         )
         if not self.api_key:
             raise ValueError(
-                "OpenAI API key not provided. Set in settings.yaml (embedding.api_key), "
-                "OPENAI_API_KEY environment variable, or pass api_key parameter."
+                "OpenAI API key not provided. Set in .env (OPENAI_API_KEY or DASHSCOPE_API_KEY), "
+                "settings.yaml (embedding.api_key), or pass api_key parameter."
             )
         
         # Azure-compatible mode detection

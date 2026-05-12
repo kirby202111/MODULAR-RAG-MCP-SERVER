@@ -6,12 +6,8 @@
 # LLM Configuration
 # =============================================================================
 llm:
-  provider: "openai"  # Options: openai, azure, ollama, deepseek
-  model: "gpt-4o"
-  deployment_name: "gpt-4o"
-  azure_endpoint: "https://YOUR_ENDPOINT.openai.azure.com/"
-  api_version: "2024-02-15-preview"
-  api_key: "YOUR_API_KEY_HERE"
+  provider: "deepseek"  # Options: openai, azure, ollama, deepseek
+  model: "deepseek-chat"
   temperature: 0.0
   max_tokens: 4096
 
@@ -19,32 +15,20 @@ llm:
 # Embedding Configuration
 # =============================================================================
 embedding:
-  provider: "openai"  # Options: openai, azure, ollama
-  model: "text-embedding-ada-002"
-  dimensions: 1536  # text-embedding-ada-002 固定维度 (不传递给API, 仅用于验证)
-  # Azure-compatible settings (azure_endpoint triggers Azure compat mode):
-  azure_endpoint: "https://YOUR_ENDPOINT.openai.azure.com/"
-  deployment_name: "text-embedding-ada-002"
-  api_version: "2024-02-15-preview"
-  api_key: "YOUR_API_KEY_HERE"
-  # OpenAI-specific settings (if provider is openai):
-  # api_key: "YOUR_API_KEY_HERE"
+  provider: "openai"  # Options: openai, azure, ollama (通义兼容OpenAI格式)
+  model: "text-embedding-v3"
+  dimensions: 1024
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  # api_key 通过环境变量 DASHSCOPE_API_KEY 设置
 
 # =============================================================================
 # Vision LLM Configuration (for Image Captioning)
 # =============================================================================
 vision_llm:
-  enabled: true  # Set to true to enable vision capabilities
-  provider: "openai"  # Options: openai, azure, ollama
-  model: "gpt-4o"  # Options: gpt-4o, gpt-4-vision-preview (OpenAI), llava (Ollama)
-  # Azure-compatible settings (azure_endpoint triggers Azure compat mode):
-  azure_endpoint: "https://YOUR_ENDPOINT.openai.azure.com/"
-  deployment_name: "gpt-4o"
-  api_version: "2024-02-15-preview"
-  api_key: "YOUR_API_KEY_HERE"
-  # Ollama-specific settings (if provider is ollama):
-  # base_url: "http://localhost:11434"
-  max_image_size: 2048  # Max dimension (width/height) for image compression
+  enabled: false  # DeepSeek 不支持 Vision，暂时关闭
+  provider: "openai"
+  model: "gpt-4o"
+  max_image_size: 2048
 
 # =============================================================================
 # Vector Store Configuration

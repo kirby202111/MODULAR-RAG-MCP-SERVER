@@ -312,6 +312,12 @@ def load_settings(path: str | Path | None = None) -> Settings:
         path: Path to settings YAML.  Defaults to
             ``<repo>/config/settings.yaml`` (absolute, CWD-independent).
     """
+    # Load .env file if present (for API keys etc.)
+    _dotenv_path = REPO_ROOT / ".env"
+    if _dotenv_path.exists():
+        from dotenv import load_dotenv
+        load_dotenv(_dotenv_path)
+
     settings_path = Path(path) if path is not None else DEFAULT_SETTINGS_PATH
     if not settings_path.is_absolute():
         settings_path = resolve_path(settings_path)
